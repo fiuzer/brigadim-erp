@@ -1,4 +1,4 @@
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+﻿export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 export type Database = {
   public: {
@@ -104,6 +104,10 @@ export type Database = {
           discount_amount: number;
           subtotal_amount: number;
           total_amount: number;
+          amount_paid: number;
+          payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+          customer_name: string | null;
+          due_date: string | null;
           payment_method:
             | "Pix"
             | "Dinheiro"
@@ -123,6 +127,10 @@ export type Database = {
           discount_amount?: number;
           subtotal_amount: number;
           total_amount: number;
+          amount_paid?: number;
+          payment_status?: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+          customer_name?: string | null;
+          due_date?: string | null;
           payment_method:
             | "Pix"
             | "Dinheiro"
@@ -162,6 +170,41 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["sale_items"]["Insert"]>;
+      };
+      sale_payments: {
+        Row: {
+          id: string;
+          sale_id: string;
+          paid_at: string;
+          amount: number;
+          payment_method:
+            | "Pix"
+            | "Dinheiro"
+            | "Cartão de Crédito"
+            | "Cartão de Débito"
+            | "Transferência"
+            | "Outro";
+          notes: string | null;
+          user_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sale_id: string;
+          paid_at?: string;
+          amount: number;
+          payment_method:
+            | "Pix"
+            | "Dinheiro"
+            | "Cartão de Crédito"
+            | "Cartão de Débito"
+            | "Transferência"
+            | "Outro";
+          notes?: string | null;
+          user_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sale_payments"]["Insert"]>;
       };
       expense_categories: {
         Row: {

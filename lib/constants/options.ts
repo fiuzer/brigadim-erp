@@ -7,6 +7,13 @@ export const PAYMENT_METHODS = [
   "Outro",
 ] as const;
 
+export const PAYMENT_STATUSES = [
+  "Em aberto",
+  "Parcial",
+  "Pago",
+  "Cancelada",
+] as const;
+
 export const MOVEMENT_TYPES = [
   "Entrada",
   "Sa\u00EDda",

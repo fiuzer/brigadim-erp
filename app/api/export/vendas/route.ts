@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("sales")
-    .select("id,sold_at,payment_method,total_amount,status,user_id")
+    .select("id,sold_at,payment_method,total_amount,amount_paid,payment_status,customer_name,due_date,status,user_id")
     .order("sold_at", { ascending: false });
 
   if (inicio) query = query.gte("sold_at", `${inicio}T00:00:00`);
@@ -40,6 +40,10 @@ export async function GET(request: Request) {
     sold_at: string;
     payment_method: string;
     total_amount: number;
+    amount_paid: number;
+    payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+    customer_name: string | null;
+    due_date: string | null;
     status: string;
     user_id: string | null;
   }>;
@@ -104,12 +108,29 @@ export async function GET(request: Request) {
     filteredSales.map((sale) => sale.user_id),
   );
 
-  const headers = ["ID", "Data", "Pagamento", "Valor Total", "Status", "Usuario"];
+  const headers = [
+    "ID",
+    "Data",
+    "Pagamento",
+    "Valor Total",
+    "Valor Recebido",
+    "Em Aberto",
+    "Status Pagamento",
+    "Cliente",
+    "Vencimento",
+    "Status",
+    "Usuario",
+  ];
   const rows = filteredSales.map((sale) => [
     asCsvValue(sale.id),
     asCsvValue(sale.sold_at),
     asCsvValue(sale.payment_method),
     asCsvValue(sale.total_amount),
+    asCsvValue(sale.amount_paid),
+    asCsvValue(Math.max(Number(sale.total_amount || 0) - Number(sale.amount_paid || 0), 0)),
+    asCsvValue(sale.payment_status),
+    asCsvValue(sale.customer_name ?? ""),
+    asCsvValue(sale.due_date ?? ""),
     asCsvValue(sale.status),
     asCsvValue(profileFromMap(profileMap, sale.user_id)?.full_name ?? ""),
   ]);

@@ -24,6 +24,10 @@ type ReportData = {
     sold_at: string;
     payment_method: string;
     total_amount: number;
+    amount_paid: number;
+    payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+    customer_name: string | null;
+    due_date: string | null;
     profile: { full_name: string | null } | null;
     sale_items: {
       product_id: string;
@@ -218,14 +222,17 @@ export function ReportsOverview({ report }: { report: ReportData }) {
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">ID</th>
                 <th className="px-3 py-2">Pagamento</th>
+                <th className="px-3 py-2">Status Pgto</th>
                 <th className="px-3 py-2">Usuario</th>
                 <th className="px-3 py-2">Total</th>
+                <th className="px-3 py-2">Recebido</th>
+                <th className="px-3 py-2">Em Aberto</th>
               </tr>
             </thead>
             <tbody>
               {filteredSales.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-4 text-center text-muted-foreground" colSpan={5}>
+                  <td className="px-3 py-4 text-center text-muted-foreground" colSpan={8}>
                     Nenhuma venda encontrada para os filtros atuais.
                   </td>
                 </tr>
@@ -235,8 +242,13 @@ export function ReportsOverview({ report }: { report: ReportData }) {
                     <td className="px-3 py-2">{formatDateTimeBR(sale.sold_at)}</td>
                     <td className="px-3 py-2">{sale.id.slice(0, 8)}</td>
                     <td className="px-3 py-2">{sale.payment_method}</td>
+                    <td className="px-3 py-2">{sale.payment_status}</td>
                     <td className="px-3 py-2">{sale.profile?.full_name ?? "-"}</td>
                     <td className="px-3 py-2">{formatCurrencyBRL(sale.total_amount)}</td>
+                    <td className="px-3 py-2">{formatCurrencyBRL(sale.amount_paid)}</td>
+                    <td className="px-3 py-2">
+                      {formatCurrencyBRL(Math.max(sale.total_amount - sale.amount_paid, 0))}
+                    </td>
                   </tr>
                 ))
               )}

@@ -16,6 +16,9 @@ begin
   if not exists (select 1 from pg_type where typname = 'sale_status_type') then
     create type sale_status_type as enum ('Ativa', 'Cancelada');
   end if;
+  if not exists (select 1 from pg_type where typname = 'payment_status_type') then
+    create type payment_status_type as enum ('Em aberto', 'Parcial', 'Pago', 'Cancelada');
+  end if;
 end $$;
 
 create or replace function public.set_updated_at()
@@ -66,6 +69,10 @@ create table if not exists public.sales (
   discount_amount numeric(12,2) not null default 0,
   subtotal_amount numeric(12,2) not null default 0,
   total_amount numeric(12,2) not null default 0,
+  amount_paid numeric(12,2) not null default 0,
+  payment_status payment_status_type not null default 'Em aberto',
+  customer_name text,
+  due_date date,
   payment_method payment_method_type not null,
   notes text,
   status sale_status_type not null default 'Ativa',
@@ -73,6 +80,11 @@ create table if not exists public.sales (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.sales add column if not exists amount_paid numeric(12,2) not null default 0;
+alter table public.sales add column if not exists payment_status payment_status_type not null default 'Em aberto';
+alter table public.sales add column if not exists customer_name text;
+alter table public.sales add column if not exists due_date date;
 
 create table if not exists public.sale_items (
   id uuid primary key default gen_random_uuid(),
@@ -83,6 +95,17 @@ create table if not exists public.sale_items (
   production_cost numeric(12,2) not null default 0,
   discount_amount numeric(12,2) not null default 0,
   total_amount numeric(12,2) not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.sale_payments (
+  id uuid primary key default gen_random_uuid(),
+  sale_id uuid not null references public.sales(id) on delete cascade,
+  paid_at timestamptz not null default now(),
+  amount numeric(12,2) not null check (amount > 0),
+  payment_method payment_method_type not null,
+  notes text,
+  user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -193,7 +216,7 @@ declare
   current_stock integer;
 begin
   update public.sales
-  set status = 'Cancelada', updated_at = now()
+  set status = 'Cancelada', payment_status = 'Cancelada', amount_paid = 0, updated_at = now()
   where id = sale_id_param and status = 'Ativa';
 
   if not found then
@@ -212,6 +235,8 @@ begin
     insert into public.inventory_movements (product_id, movement_type, quantity, reason, notes, user_id, sale_item_id)
     values (item.product_id, 'Cancelamento', item.quantity, 'Estorno de venda', 'Cancelamento via função SQL', auth.uid(), item.id);
   end loop;
+
+  delete from public.sale_payments where sale_id = sale_id_param;
 
   return true;
 end;
@@ -264,6 +289,8 @@ drop trigger if exists audit_expenses on public.expenses;
 create trigger audit_expenses after insert or update or delete on public.expenses for each row execute function public.audit_log_changes();
 drop trigger if exists audit_inventory on public.inventory_movements;
 create trigger audit_inventory after insert or update or delete on public.inventory_movements for each row execute function public.audit_log_changes();
+drop trigger if exists audit_sale_payments on public.sale_payments;
+create trigger audit_sale_payments after insert or update or delete on public.sale_payments for each row execute function public.audit_log_changes();
 
 create or replace view public.v_low_stock_products as
 select
@@ -339,6 +366,7 @@ alter table public.products enable row level security;
 alter table public.inventory_movements enable row level security;
 alter table public.sales enable row level security;
 alter table public.sale_items enable row level security;
+alter table public.sale_payments enable row level security;
 alter table public.expense_categories enable row level security;
 alter table public.expenses enable row level security;
 alter table public.dashboard_layouts enable row level security;
@@ -410,6 +438,17 @@ create policy "sale_items_write" on public.sale_items
 for all to authenticated
 using (public.has_any_role(array['administrador','vendas']::user_role[]))
 with check (public.has_any_role(array['administrador','vendas']::user_role[]));
+
+drop policy if exists "sale_payments_read" on public.sale_payments;
+create policy "sale_payments_read" on public.sale_payments
+for select to authenticated
+using (true);
+
+drop policy if exists "sale_payments_write" on public.sale_payments;
+create policy "sale_payments_write" on public.sale_payments
+for all to authenticated
+using (public.has_any_role(array['administrador','vendas','financeiro']::user_role[]))
+with check (public.has_any_role(array['administrador','vendas','financeiro']::user_role[]));
 
 drop policy if exists "expense_categories_read" on public.expense_categories;
 create policy "expense_categories_read" on public.expense_categories

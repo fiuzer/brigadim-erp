@@ -1,4 +1,4 @@
-import { FileSpreadsheet, FileText, LineChart, Wallet } from "lucide-react";
+﻿import { CircleDollarSign, FileSpreadsheet, FileText, HandCoins, Receipt } from "lucide-react";
 import Link from "next/link";
 import { endOfDay, format, startOfMonth } from "date-fns";
 import { PageHeader } from "@/components/shared/page-header";
@@ -58,10 +58,7 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
         description="Analise consolidada de vendas, despesas e lucratividade com filtros interativos."
         action={
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/api/export/vendas?${query}`}
-              className={linkButtonOutline}
-            >
+            <Link href={`/api/export/vendas?${query}`} className={linkButtonOutline}>
               <FileText className="h-4 w-4" />
               Exportar CSV (Vendas)
             </Link>
@@ -78,27 +75,27 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
           title="Faturamento"
           value={formatCurrencyBRL(report.kpis.revenue)}
           subtitle={`${report.kpis.salesCount} vendas`}
-          icon={LineChart}
+          icon={CircleDollarSign}
           tone="positive"
         />
         <KpiCard
-          title="Despesas"
-          value={formatCurrencyBRL(report.kpis.expenses)}
-          subtitle="No periodo filtrado"
-          icon={Wallet}
-          tone="warning"
+          title="Recebido"
+          value={formatCurrencyBRL(report.kpis.receivedAmount)}
+          subtitle="Pagamentos confirmados"
+          icon={HandCoins}
+          tone="positive"
         />
         <KpiCard
-          title="Lucro Bruto"
-          value={formatCurrencyBRL(report.kpis.grossProfit)}
-          subtitle="Receita - custo dos produtos"
-          icon={LineChart}
+          title="Em Aberto"
+          value={formatCurrencyBRL(report.kpis.openReceivables)}
+          subtitle="Contas pendentes"
+          icon={Receipt}
         />
         <KpiCard
           title="Lucro Liquido"
           value={formatCurrencyBRL(report.kpis.netProfit)}
-          subtitle="Apos despesas operacionais"
-          icon={Wallet}
+          subtitle={`Despesas: ${formatCurrencyBRL(report.kpis.expenses)}`}
+          icon={CircleDollarSign}
         />
       </section>
 

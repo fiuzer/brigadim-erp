@@ -1,5 +1,15 @@
-import { requirePermission } from "@/features/auth/server";
+﻿import { requirePermission } from "@/features/auth/server";
 import { getProfileNameMap, profileFromMap } from "@/lib/services/profile-names";
+
+export type SalePaymentRow = {
+  id: string;
+  paid_at: string;
+  amount: number;
+  payment_method: string;
+  notes: string | null;
+  user_id: string | null;
+  created_at: string;
+};
 
 export type SalesQueryRow = {
   id: string;
@@ -8,6 +18,10 @@ export type SalesQueryRow = {
   subtotal_amount: number;
   discount_amount: number;
   total_amount: number;
+  amount_paid: number;
+  payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+  customer_name: string | null;
+  due_date: string | null;
   status: "Ativa" | "Cancelada";
   notes: string | null;
   user_id: string | null;
@@ -21,6 +35,7 @@ export type SalesQueryRow = {
     production_cost: number;
     product: { name: string } | null;
   }[];
+  sale_payments: SalePaymentRow[];
 };
 
 export type SaleProductOption = {
@@ -37,7 +52,9 @@ export async function getSalesPageData() {
   const [salesResult, productsResult] = await Promise.all([
     supabase
       .from("sales")
-      .select("*, sale_items(*, product:products(name))")
+      .select(
+        "id,sold_at,payment_method,subtotal_amount,discount_amount,total_amount,amount_paid,payment_status,customer_name,due_date,status,notes,user_id,sale_items(id,product_id,quantity,unit_price,total_amount,production_cost,product:products(name)),sale_payments(id,paid_at,amount,payment_method,notes,user_id,created_at)",
+      )
       .order("sold_at", { ascending: false })
       .limit(300),
     supabase
@@ -55,18 +72,9 @@ export async function getSalesPageData() {
     throw new Error(`Erro ao carregar produtos: ${productsResult.error.message}`);
   }
 
-  const salesRows = (salesResult.data ?? []) as unknown as Array<{
-    id: string;
-    sold_at: string;
-    payment_method: string;
-    subtotal_amount: number;
-    discount_amount: number;
-    total_amount: number;
-    status: "Ativa" | "Cancelada";
-    notes: string | null;
-    user_id: string | null;
-    sale_items: SalesQueryRow["sale_items"];
-  }>;
+  const salesRows = (salesResult.data ?? []) as unknown as Array<
+    Omit<SalesQueryRow, "profile"> & { sale_payments?: SalePaymentRow[] }
+  >;
 
   const profileMap = await getProfileNameMap(
     supabase,
@@ -75,6 +83,9 @@ export async function getSalesPageData() {
 
   const sales = salesRows.map((sale) => ({
     ...sale,
+    sale_payments: (sale.sale_payments ?? []).sort(
+      (a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime(),
+    ),
     profile: profileFromMap(profileMap, sale.user_id),
   }));
 

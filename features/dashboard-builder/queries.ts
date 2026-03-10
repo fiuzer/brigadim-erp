@@ -2,6 +2,7 @@ import { endOfDay, format, startOfMonth, subDays } from "date-fns";
 import { requirePermission } from "@/features/auth/server";
 import { PAYMENT_METHODS } from "@/lib/constants/options";
 import { calcAverageTicket, calcGrossProfit, calcNetProfit } from "@/lib/utils/financial";
+import { getDateInputValueInTimeZone, getDateValueInTimeZone } from "@/lib/utils/timezone";
 import { getProfileNameMap } from "@/lib/services/profile-names";
 import type { DashboardAnalytics, DashboardFilterState } from "@/lib/types/dashboard";
 import type { DashboardWidgetLayout } from "@/lib/types/app";
@@ -210,15 +211,15 @@ export async function getDashboardData(
     salesCount: filteredSales.length,
   });
 
-  const todayString = new Date().toISOString().slice(0, 10);
+  const todayString = getDateInputValueInTimeZone();
   const todayRevenue = useItemScopedRevenue
     ? saleItemsForMetrics.reduce((acc, item) => {
         const parentSale = saleById.get(item.sale_id);
-        if (!parentSale || !parentSale.sold_at.startsWith(todayString)) return acc;
+        if (!parentSale || getDateValueInTimeZone(parentSale.sold_at) !== todayString) return acc;
         return acc + Number(item.total_amount || 0);
       }, 0)
     : filteredSales
-        .filter((sale) => sale.sold_at.startsWith(todayString))
+        .filter((sale) => getDateValueInTimeZone(sale.sold_at) === todayString)
         .reduce((acc, sale) => acc + Number(sale.total_amount || 0), 0);
 
   const paymentBreakdownMap = saleItemsForMetrics.reduce<Record<string, number>>((acc, item) => {
@@ -282,10 +283,10 @@ export async function getDashboardData(
     0,
   );
 
-  const thirtyDaysAgo = subDays(new Date(), 30).toISOString().slice(0, 10);
+  const thirtyDaysAgo = getDateInputValueInTimeZone(subDays(new Date(), 30));
   const productIdsWithMovement = new Set(
     saleItems
-      .filter((item) => (item.created_at ? item.created_at >= `${thirtyDaysAgo}T00:00:00` : true))
+      .filter((item) => (item.created_at ? getDateValueInTimeZone(item.created_at) >= thirtyDaysAgo : true))
       .map((item) => item.product_id),
   );
   const productsWithoutMovement = products.filter(

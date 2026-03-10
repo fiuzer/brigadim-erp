@@ -1,4 +1,4 @@
-import { requirePermission } from "@/features/auth/server";
+﻿import { requirePermission } from "@/features/auth/server";
 
 type ProductCategory = {
   id: string;
@@ -21,6 +21,10 @@ type Sale = {
   sold_at: string;
   payment_method: string;
   total_amount: number;
+  amount_paid: number;
+  payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+  customer_name: string | null;
+  due_date: string | null;
   status: "Ativa" | "Cancelada";
   user_id: string | null;
 };
@@ -53,6 +57,10 @@ type EnrichedSale = {
   sold_at: string;
   payment_method: string;
   total_amount: number;
+  amount_paid: number;
+  payment_status: "Em aberto" | "Parcial" | "Pago" | "Cancelada";
+  customer_name: string | null;
+  due_date: string | null;
   status: "Ativa" | "Cancelada";
   user_id: string | null;
   profile: { full_name: string | null } | null;
@@ -101,7 +109,7 @@ export async function getReportsData(filters: ReportFilters) {
 
   let salesQuery = supabase
     .from("sales")
-    .select("id,sold_at,payment_method,total_amount,status,user_id")
+    .select("id,sold_at,payment_method,total_amount,amount_paid,payment_status,customer_name,due_date,status,user_id")
     .gte("sold_at", `${filters.startDate}T00:00:00`)
     .lte("sold_at", `${filters.endDate}T23:59:59`)
     .order("sold_at", { ascending: false });
@@ -213,6 +221,10 @@ export async function getReportsData(filters: ReportFilters) {
     sold_at: sale.sold_at,
     payment_method: sale.payment_method,
     total_amount: Number(sale.total_amount || 0),
+    amount_paid: Number(sale.amount_paid || 0),
+    payment_status: sale.payment_status,
+    customer_name: sale.customer_name,
+    due_date: sale.due_date,
     status: sale.status,
     user_id: sale.user_id,
     profile: sale.user_id ? { full_name: userById.get(sale.user_id) ?? null } : null,
@@ -234,10 +246,7 @@ export async function getReportsData(filters: ReportFilters) {
     if (paymentMethod && sale.payment_method !== paymentMethod) return false;
     if (userId && sale.user_id !== userId) return false;
     if (productId && !sale.sale_items.some((item) => item.product_id === productId)) return false;
-    if (
-      categoryId &&
-      !sale.sale_items.some((item) => item.product?.category?.id === categoryId)
-    ) {
+    if (categoryId && !sale.sale_items.some((item) => item.product?.category?.id === categoryId)) {
       return false;
     }
     return true;
@@ -250,6 +259,11 @@ export async function getReportsData(filters: ReportFilters) {
   });
 
   const revenue = filteredSales.reduce((acc, sale) => acc + sale.total_amount, 0);
+  const receivedAmount = filteredSales.reduce((acc, sale) => acc + sale.amount_paid, 0);
+  const openReceivables = filteredSales.reduce(
+    (acc, sale) => acc + Math.max(sale.total_amount - sale.amount_paid, 0),
+    0,
+  );
   const cogs = filteredSales.reduce(
     (acc, sale) =>
       acc +
@@ -309,6 +323,8 @@ export async function getReportsData(filters: ReportFilters) {
       expenses: filteredExpenses,
       kpis: {
         revenue,
+        receivedAmount,
+        openReceivables,
         expenses,
         grossProfit,
         netProfit,

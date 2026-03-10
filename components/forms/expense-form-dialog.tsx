@@ -10,6 +10,7 @@ import {
   updateExpenseAction,
 } from "@/features/expenses/actions";
 import { expenseSchema, type ExpenseFormValues } from "@/lib/validators/expense";
+import { getDateInputValueInTimeZone } from "@/lib/utils/timezone";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ type ExpenseFormDialogProps = {
 };
 
 const defaultValues: ExpenseFormValues = {
-  expense_date: new Date().toISOString().slice(0, 10),
+  expense_date: getDateInputValueInTimeZone(),
   category_id: null,
   description: "",
   amount: 0,

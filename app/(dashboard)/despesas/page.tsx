@@ -8,6 +8,7 @@ import { ExpensesTable } from "@/features/expenses/expenses-table";
 import { getProfileOrRedirect } from "@/features/auth/server";
 import { hasPermission } from "@/lib/constants/roles";
 import { formatCurrencyBRL } from "@/lib/utils/format";
+import { getYearMonthValueInTimeZone } from "@/lib/utils/timezone";
 
 export default async function DespesasPage() {
   const [{ expenses, categories }, { profile }] = await Promise.all([
@@ -18,7 +19,7 @@ export default async function DespesasPage() {
   const canWrite = hasPermission(profile.role, "expenses:write");
   const total = expenses.reduce((acc, item) => acc + Number(item.amount || 0), 0);
   const avg = expenses.length > 0 ? total / expenses.length : 0;
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = getYearMonthValueInTimeZone();
   const monthly = expenses
     .filter((item) => item.expense_date.startsWith(currentMonth))
     .reduce((acc, item) => acc + Number(item.amount || 0), 0);
