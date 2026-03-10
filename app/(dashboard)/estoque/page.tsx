@@ -26,35 +26,35 @@ export default async function EstoquePage() {
     <div className="space-y-6">
       <PageHeader
         title="Estoque"
-        description="Controle entradas, saÃ­das e ajustes com rastreabilidade por usuÃ¡rio."
+        description="Controle entradas, saídas e ajustes com rastreabilidade por usuário."
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard title="Itens em Estoque" value={String(products.length)} subtitle="Produtos monitorados" icon={Boxes} />
         <KpiCard
-          title="Estoque CrÃ­tico"
+          title="Estoque Crítico"
           value={String(lowStockCount)}
-          subtitle="Abaixo do mÃ­nimo definido"
+          subtitle="Abaixo do mínimo definido"
           icon={AlertTriangle}
           tone={lowStockCount > 0 ? "warning" : "default"}
         />
         <KpiCard
           title="Valor Total em Estoque"
           value={formatCurrencyBRL(totalStockValue)}
-          subtitle="Soma por custo de produÃ§Ã£o"
+          subtitle="Soma por custo de produção"
           icon={PackageCheck}
         />
         <KpiCard
-          title="MovimentaÃ§Ãµes Recentes"
+          title="Movimentações Recentes"
           value={String(movements.length)}
-          subtitle="Ãšltimos lanÃ§amentos"
+          subtitle="Últimos lançamentos"
           icon={ClipboardList}
         />
       </section>
 
       <Card className="border-slate-200 bg-white">
         <CardHeader>
-          <CardTitle className="text-base">Nova MovimentaÃ§Ã£o</CardTitle>
+          <CardTitle className="text-base">Nova Movimentação</CardTitle>
         </CardHeader>
         <CardContent>
           <InventoryMovementForm
@@ -63,19 +63,19 @@ export default async function EstoquePage() {
           />
           {!canWrite ? (
             <p className="mt-3 text-xs text-rose-700">
-              Seu perfil possui permissÃ£o de leitura. Somente usuÃ¡rios com acesso de estoque podem registrar movimentaÃ§Ãµes.
+              Seu perfil possui permissão de leitura. Somente usuários com acesso de estoque podem registrar movimentações.
             </p>
           ) : null}
         </CardContent>
       </Card>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">VisÃ£o Atual do Estoque</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Visão Atual do Estoque</h2>
         <StockOverviewTable data={products} />
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">HistÃ³rico de MovimentaÃ§Ãµes</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Histórico de Movimentações</h2>
         <MovementHistoryTable data={movements} />
       </section>
     </div>

@@ -53,6 +53,9 @@ export function ReportsOverview({ report }: { report: ReportData }) {
   const [paymentDrilldown, setPaymentDrilldown] = useState<string | null>(null);
   const [productDrilldown, setProductDrilldown] = useState<string | null>(null);
   const [expenseCategoryDrilldown, setExpenseCategoryDrilldown] = useState<string | null>(null);
+  const hasPaymentChartData = report.salesByPayment.some((item) => item.value > 0);
+  const hasProductChartData = report.salesByProduct.some((item) => item.qty > 0);
+  const hasExpenseChartData = report.expensesByCategory.some((item) => item.value > 0);
 
   const filteredSales = useMemo(() => {
     return report.sales.filter((sale) => {
@@ -78,7 +81,7 @@ export function ReportsOverview({ report }: { report: ReportData }) {
 
   return (
     <div className="space-y-4">
-      <Card className="border-slate-200 bg-white">
+      <Card className="border-border bg-card">
         <CardContent className="flex flex-wrap items-center gap-2 p-4">
           {paymentDrilldown ? (
             <Badge className="bg-cyan-100 text-cyan-700">Pagamento: {paymentDrilldown}</Badge>
@@ -97,7 +100,7 @@ export function ReportsOverview({ report }: { report: ReportData }) {
               Limpar drilldowns
             </Button>
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Clique nos graficos para abrir drilldowns interativos.
             </p>
           )}
@@ -105,86 +108,104 @@ export function ReportsOverview({ report }: { report: ReportData }) {
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base">Vendas por Forma de Pagamento</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={report.salesByPayment}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={55}
-                  outerRadius={95}
-                  fill="#B96A75"
-                  onClick={(item) => {
-                    const name = (item as { name?: string } | undefined)?.name;
-                    if (!name) return;
-                    setPaymentDrilldown((old) => (old === name ? null : name));
-                  }}
-                />
-                <Tooltip formatter={(value) => formatCurrencyBRL(Number(value))} />
-              </PieChart>
-            </ResponsiveContainer>
+            {hasPaymentChartData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={report.salesByPayment}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={95}
+                    fill="#B96A75"
+                    onClick={(item) => {
+                      const name = (item as { name?: string } | undefined)?.name;
+                      if (!name) return;
+                      setPaymentDrilldown((old) => (old === name ? null : name));
+                    }}
+                  />
+                  <Tooltip formatter={(value) => formatCurrencyBRL(Number(value))} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Nenhum dado de pagamento no periodo.
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base">Produtos Mais Vendidos</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={report.salesByProduct.slice(0, 10)} margin={{ left: -10, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value) => `${value} un.`} />
-                <Bar
-                  dataKey="qty"
-                  fill="#06b6d4"
-                  radius={[6, 6, 0, 0]}
-                  onClick={(item) => {
-                    const name = (item as { name?: string } | undefined)?.name;
-                    if (!name) return;
-                    setProductDrilldown((old) => (old === name ? null : name));
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {hasProductChartData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={report.salesByProduct.slice(0, 10)} margin={{ left: -10, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(value) => `${value} un.`} />
+                  <Bar
+                    dataKey="qty"
+                    fill="#907761"
+                    radius={[6, 6, 0, 0]}
+                    onClick={(item) => {
+                      const name = (item as { name?: string } | undefined)?.name;
+                      if (!name) return;
+                      setProductDrilldown((old) => (old === name ? null : name));
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Nenhum produto vendido no periodo.
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-border bg-card">
           <CardHeader>
             <CardTitle className="text-base">Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={report.expensesByCategory} margin={{ left: -10, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value) => formatCurrencyBRL(Number(value))} />
-                <Bar
-                  dataKey="value"
-                  fill="#B96A75"
-                  radius={[6, 6, 0, 0]}
-                  onClick={(item) => {
-                    const name = (item as { name?: string } | undefined)?.name;
-                    if (!name) return;
-                    setExpenseCategoryDrilldown((old) => (old === name ? null : name));
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {hasExpenseChartData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={report.expensesByCategory} margin={{ left: -10, right: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(value) => formatCurrencyBRL(Number(value))} />
+                  <Bar
+                    dataKey="value"
+                    fill="#B96A75"
+                    radius={[6, 6, 0, 0]}
+                    onClick={(item) => {
+                      const name = (item as { name?: string } | undefined)?.name;
+                      if (!name) return;
+                      setExpenseCategoryDrilldown((old) => (old === name ? null : name));
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Nenhuma despesa no periodo.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-slate-200 bg-white">
+      <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="text-base">
             Relatorio de Vendas ({filteredSales.length})
@@ -192,7 +213,7 @@ export function ReportsOverview({ report }: { report: ReportData }) {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left">
+            <thead className="border-b border-border bg-muted/50 text-left">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">ID</th>
@@ -202,21 +223,29 @@ export function ReportsOverview({ report }: { report: ReportData }) {
               </tr>
             </thead>
             <tbody>
-              {filteredSales.map((sale) => (
-                <tr key={sale.id} className="border-b border-slate-100">
-                  <td className="px-3 py-2">{formatDateTimeBR(sale.sold_at)}</td>
-                  <td className="px-3 py-2">{sale.id.slice(0, 8)}</td>
-                  <td className="px-3 py-2">{sale.payment_method}</td>
-                  <td className="px-3 py-2">{sale.profile?.full_name ?? "-"}</td>
-                  <td className="px-3 py-2">{formatCurrencyBRL(sale.total_amount)}</td>
+              {filteredSales.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-4 text-center text-muted-foreground" colSpan={5}>
+                    Nenhuma venda encontrada para os filtros atuais.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                filteredSales.map((sale) => (
+                  <tr key={sale.id} className="border-b border-border/60">
+                    <td className="px-3 py-2">{formatDateTimeBR(sale.sold_at)}</td>
+                    <td className="px-3 py-2">{sale.id.slice(0, 8)}</td>
+                    <td className="px-3 py-2">{sale.payment_method}</td>
+                    <td className="px-3 py-2">{sale.profile?.full_name ?? "-"}</td>
+                    <td className="px-3 py-2">{formatCurrencyBRL(sale.total_amount)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 bg-white">
+      <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="text-base">
             Relatorio de Despesas ({filteredExpenses.length})
@@ -224,7 +253,7 @@ export function ReportsOverview({ report }: { report: ReportData }) {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left">
+            <thead className="border-b border-border bg-muted/50 text-left">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">Descricao</th>
@@ -234,15 +263,23 @@ export function ReportsOverview({ report }: { report: ReportData }) {
               </tr>
             </thead>
             <tbody>
-              {filteredExpenses.map((expense) => (
-                <tr key={expense.id} className="border-b border-slate-100">
-                  <td className="px-3 py-2">{formatDateBR(expense.expense_date)}</td>
-                  <td className="px-3 py-2">{expense.description}</td>
-                  <td className="px-3 py-2">{expense.category?.name ?? "Sem categoria"}</td>
-                  <td className="px-3 py-2">{expense.profile?.full_name ?? "-"}</td>
-                  <td className="px-3 py-2">{formatCurrencyBRL(expense.amount)}</td>
+              {filteredExpenses.length === 0 ? (
+                <tr>
+                  <td className="px-3 py-4 text-center text-muted-foreground" colSpan={5}>
+                    Nenhuma despesa encontrada para os filtros atuais.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                filteredExpenses.map((expense) => (
+                  <tr key={expense.id} className="border-b border-border/60">
+                    <td className="px-3 py-2">{formatDateBR(expense.expense_date)}</td>
+                    <td className="px-3 py-2">{expense.description}</td>
+                    <td className="px-3 py-2">{expense.category?.name ?? "Sem categoria"}</td>
+                    <td className="px-3 py-2">{expense.profile?.full_name ?? "-"}</td>
+                    <td className="px-3 py-2">{formatCurrencyBRL(expense.amount)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </CardContent>

@@ -1,15 +1,15 @@
 export const PAYMENT_METHODS = [
   "Pix",
   "Dinheiro",
-  "Cartão de Crédito",
-  "Cartão de Débito",
-  "Transferência",
+  "Cart\u00E3o de Cr\u00E9dito",
+  "Cart\u00E3o de D\u00E9bito",
+  "Transfer\u00EAncia",
   "Outro",
 ] as const;
 
 export const MOVEMENT_TYPES = [
   "Entrada",
-  "Saída",
+  "Sa\u00EDda",
   "Ajuste",
   "Venda",
   "Cancelamento",
@@ -18,7 +18,7 @@ export const MOVEMENT_TYPES = [
 export const EXPENSE_CATEGORY_FALLBACK = [
   "Ingredientes",
   "Embalagens",
-  "Gás",
+  "G\u00E1s",
   "Energia",
   "Transporte",
   "Marketing",

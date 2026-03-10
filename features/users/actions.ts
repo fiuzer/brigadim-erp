@@ -16,7 +16,7 @@ const updateUserSchema = z.object({
 export async function updateUserAccessAction(input: z.infer<typeof updateUserSchema>) {
   const parsed = updateUserSchema.safeParse(input);
   if (!parsed.success) {
-    throw new Error("Dados de usuário inválidos.");
+    throw new Error("Dados de usuario invalidos.");
   }
 
   const { supabase } = await requirePermission("users:write");
@@ -26,7 +26,7 @@ export async function updateUserAccessAction(input: z.infer<typeof updateUserSch
     .eq("id", parsed.data.id);
 
   if (error) {
-    throw new Error(`Erro ao atualizar usuário: ${error.message}`);
+    throw new Error(`Erro ao atualizar usuario: ${error.message}`);
   }
 
   revalidatePath("/usuarios");
@@ -51,9 +51,18 @@ export async function createUserAccessAction(input: z.infer<typeof createUserSch
   });
 
   if (error || !data.user) {
-    if (error?.message?.toLowerCase().includes("already")) {
+    const errorMessage = (error?.message ?? "").toLowerCase();
+
+    if (errorMessage.includes("already")) {
       throw new Error("Ja existe um usuario com este e-mail.");
     }
+
+    if (errorMessage.includes("invalid api key") || errorMessage.includes("user not allowed")) {
+      throw new Error(
+        "Configuracao invalida do Supabase: verifique SUPABASE_SERVICE_ROLE_KEY (deve ser service_role).",
+      );
+    }
+
     throw new Error(`Erro ao criar usuario: ${error?.message ?? "Falha desconhecida."}`);
   }
 

@@ -78,7 +78,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
     },
     {
       accessorKey: "id",
-      header: "CÃ³digo",
+      header: "Código",
       cell: ({ row }) => row.original.id.slice(0, 8),
     },
     {
@@ -93,7 +93,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
     },
     {
       accessorKey: "profile",
-      header: "UsuÃ¡rio",
+      header: "Usuário",
       cell: ({ row }) => row.original.profile?.full_name ?? "-",
     },
     {
@@ -113,7 +113,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
     },
     {
       id: "actions",
-      header: "AÃ§Ãµes",
+      header: "Ações",
       cell: ({ row }) => (
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setSelectedSale(row.original)}>
@@ -144,7 +144,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
         searchAccessor={(row) =>
           `${row.id} ${row.payment_method} ${row.profile?.full_name ?? ""} ${row.status}`
         }
-        searchPlaceholder="Filtrar por ID, pagamento, usuÃ¡rio..."
+        searchPlaceholder="Filtrar por ID, pagamento, usuário..."
         rightAction={
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Input
@@ -167,9 +167,9 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
                 <SelectItem value="todos">Todos pagamentos</SelectItem>
                 <SelectItem value="Pix">Pix</SelectItem>
                 <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="CartÃ£o de CrÃ©dito">CartÃ£o de CrÃ©dito</SelectItem>
-                <SelectItem value="CartÃ£o de DÃ©bito">CartÃ£o de DÃ©bito</SelectItem>
-                <SelectItem value="TransferÃªncia">TransferÃªncia</SelectItem>
+                <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                <SelectItem value="Transferência">Transferência</SelectItem>
                 <SelectItem value="Outro">Outro</SelectItem>
               </SelectContent>
             </Select>
@@ -217,7 +217,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
             <div className="space-y-4">
               <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm md:grid-cols-2">
                 <p>
-                  <span className="text-slate-500">CÃ³digo:</span> {selectedSale.id}
+                  <span className="text-slate-500">Código:</span> {selectedSale.id}
                 </p>
                 <p>
                   <span className="text-slate-500">Data:</span> {formatDateTimeBR(selectedSale.sold_at)}
@@ -226,8 +226,8 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
                   <span className="text-slate-500">Pagamento:</span> {selectedSale.payment_method}
                 </p>
                 <p>
-                  <span className="text-slate-500">UsuÃ¡rio:</span>{" "}
-                  {selectedSale.profile?.full_name ?? "Sem identificaÃ§Ã£o"}
+                  <span className="text-slate-500">Usuário:</span>{" "}
+                  {selectedSale.profile?.full_name ?? "Sem identificação"}
                 </p>
                 <p>
                   <span className="text-slate-500">Status:</span> {selectedSale.status}
@@ -244,7 +244,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
                     <tr>
                       <th className="px-3 py-2 font-medium">Produto</th>
                       <th className="px-3 py-2 font-medium">Qtd.</th>
-                      <th className="px-3 py-2 font-medium">PreÃ§o</th>
+                      <th className="px-3 py-2 font-medium">Preço</th>
                       <th className="px-3 py-2 font-medium">Total</th>
                     </tr>
                   </thead>
@@ -263,7 +263,7 @@ export function SalesTable({ sales, canWrite }: SalesTableProps) {
 
               {selectedSale.notes ? (
                 <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                  <span className="font-medium">ObservaÃ§Ã£o:</span> {selectedSale.notes}
+                  <span className="font-medium">Observação:</span> {selectedSale.notes}
                 </p>
               ) : null}
 

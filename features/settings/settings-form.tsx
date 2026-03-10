@@ -29,9 +29,9 @@ export function SettingsForm({ initialValues, canWrite }: SettingsFormProps) {
     startTransition(async () => {
       try {
         await updateSettingsAction(values);
-        toast.success("ConfiguraÃ§Ãµes atualizadas.");
+        toast.success("Configurações atualizadas.");
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Erro ao atualizar configuraÃ§Ãµes.");
+        toast.error(error instanceof Error ? error.message : "Erro ao atualizar configurações.");
       }
     });
   };
@@ -48,11 +48,11 @@ export function SettingsForm({ initialValues, canWrite }: SettingsFormProps) {
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="default_currency">Moeda padrÃ£o</Label>
+          <Label htmlFor="default_currency">Moeda padrão</Label>
           <Input id="default_currency" disabled={!canWrite} {...form.register("default_currency")} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="timezone">Fuso horÃ¡rio</Label>
+          <Label htmlFor="timezone">Fuso horário</Label>
           <Input id="timezone" disabled={!canWrite} {...form.register("timezone")} />
         </div>
       </div>
@@ -65,7 +65,7 @@ export function SettingsForm({ initialValues, canWrite }: SettingsFormProps) {
               Salvando...
             </>
           ) : (
-            "Salvar configuraÃ§Ãµes"
+            "Salvar configurações"
           )}
         </Button>
       ) : (

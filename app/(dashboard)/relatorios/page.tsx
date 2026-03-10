@@ -3,12 +3,10 @@ import Link from "next/link";
 import { endOfDay, format, startOfMonth } from "date-fns";
 import { PageHeader } from "@/components/shared/page-header";
 import { KpiCard } from "@/components/shared/kpi-card";
-import { buttonVariants } from "@/components/ui/button";
 import { ReportFilters } from "@/features/reports/report-filters";
 import { ReportsOverview } from "@/features/reports/reports-overview";
 import { getReportsData } from "@/features/reports/queries";
 import { formatCurrencyBRL } from "@/lib/utils/format";
-import { cn } from "@/lib/utils";
 
 type ReportsPageProps = {
   searchParams: Promise<{
@@ -16,6 +14,7 @@ type ReportsPageProps = {
     fim?: string;
     produto?: string;
     categoria?: string;
+    categoriaDespesa?: string;
     pagamento?: string;
     usuario?: string;
   }>;
@@ -31,6 +30,7 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
     endDate,
     productId: params.produto,
     categoryId: params.categoria,
+    expenseCategoryId: params.categoriaDespesa,
     paymentMethod: params.pagamento,
     userId: params.usuario,
   });
@@ -40,9 +40,16 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
     fim: endDate,
     ...(params.produto ? { produto: params.produto } : {}),
     ...(params.categoria ? { categoria: params.categoria } : {}),
+    ...(params.categoriaDespesa ? { categoriaDespesa: params.categoriaDespesa } : {}),
     ...(params.pagamento ? { pagamento: params.pagamento } : {}),
     ...(params.usuario ? { usuario: params.usuario } : {}),
   }).toString();
+  const linkButtonBase =
+    "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors";
+  const linkButtonOutline =
+    `${linkButtonBase} border border-border bg-background text-foreground hover:bg-muted`;
+  const linkButtonPrimary =
+    `${linkButtonBase} bg-[#B96A75] text-[#fffaf8] hover:bg-[#a85b66]`;
 
   return (
     <div className="space-y-6">
@@ -53,12 +60,12 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/api/export/vendas?${query}`}
-              className={cn(buttonVariants({ variant: "outline" }))}
+              className={linkButtonOutline}
             >
               <FileText className="h-4 w-4" />
               Exportar CSV (Vendas)
             </Link>
-            <Link href={`/api/export/despesas?${query}`} className={cn(buttonVariants())}>
+            <Link href={`/api/export/despesas?${query}`} className={linkButtonPrimary}>
               <FileSpreadsheet className="h-4 w-4" />
               Exportar CSV (Despesas)
             </Link>
@@ -96,14 +103,17 @@ export default async function RelatoriosPage({ searchParams }: ReportsPageProps)
       </section>
 
       <ReportFilters
+        key={query}
         startDate={startDate}
         endDate={endDate}
         productId={params.produto}
         categoryId={params.categoria}
+        expenseCategoryId={params.categoriaDespesa}
         paymentMethod={params.pagamento}
         userId={params.usuario}
         products={filtersData.products}
         categories={filtersData.categories}
+        expenseCategories={filtersData.expenseCategories}
         users={filtersData.users}
       />
 

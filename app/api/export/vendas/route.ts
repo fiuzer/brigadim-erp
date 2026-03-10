@@ -15,6 +15,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const inicio = searchParams.get("inicio");
   const fim = searchParams.get("fim");
+  const produto = searchParams.get("produto");
+  const categoria = searchParams.get("categoria");
+  const pagamento = searchParams.get("pagamento");
+  const usuario = searchParams.get("usuario");
 
   let query = supabase
     .from("sales")
@@ -23,6 +27,8 @@ export async function GET(request: Request) {
 
   if (inicio) query = query.gte("sold_at", `${inicio}T00:00:00`);
   if (fim) query = query.lte("sold_at", `${fim}T23:59:59`);
+  if (pagamento && pagamento !== "todos") query = query.eq("payment_method", pagamento);
+  if (usuario && usuario !== "todos") query = query.eq("user_id", usuario);
 
   const { data, error } = await query;
   if (error) {
@@ -38,13 +44,68 @@ export async function GET(request: Request) {
     user_id: string | null;
   }>;
 
+  let filteredSales = sales;
+
+  if ((produto && produto !== "todos") || (categoria && categoria !== "todos")) {
+    const saleIds = sales.map((sale) => sale.id);
+
+    if (saleIds.length > 0) {
+      const { data: saleItems, error: saleItemsError } = await supabase
+        .from("sale_items")
+        .select("sale_id,product_id")
+        .in("sale_id", saleIds);
+
+      if (saleItemsError) {
+        return NextResponse.json({ error: "Falha ao aplicar filtro de itens." }, { status: 500 });
+      }
+
+      const saleItemsRows = (saleItems ?? []) as Array<{ sale_id: string; product_id: string }>;
+      let allowedProductIds: Set<string> | null = null;
+
+      if (categoria && categoria !== "todos") {
+        const { data: products, error: productsError } = await supabase
+          .from("products")
+          .select("id,category_id");
+
+        if (productsError) {
+          return NextResponse.json(
+            { error: "Falha ao aplicar filtro de categoria." },
+            { status: 500 },
+          );
+        }
+
+        const productsRows = (products ?? []) as Array<{ id: string; category_id: string | null }>;
+        allowedProductIds = new Set(
+          productsRows
+            .filter((product) => product.category_id === categoria)
+            .map((product) => product.id),
+        );
+      }
+
+      const filteredSaleIds = new Set(
+        saleItemsRows
+          .filter((item) => {
+            const matchesProduct = !produto || produto === "todos" || item.product_id === produto;
+            const matchesCategory =
+              !allowedProductIds || allowedProductIds.has(item.product_id);
+            return matchesProduct && matchesCategory;
+          })
+          .map((item) => item.sale_id),
+      );
+
+      filteredSales = sales.filter((sale) => filteredSaleIds.has(sale.id));
+    } else {
+      filteredSales = [];
+    }
+  }
+
   const profileMap = await getProfileNameMap(
     supabase,
-    sales.map((sale) => sale.user_id),
+    filteredSales.map((sale) => sale.user_id),
   );
 
   const headers = ["ID", "Data", "Pagamento", "Valor Total", "Status", "Usuario"];
-  const rows = sales.map((sale) => [
+  const rows = filteredSales.map((sale) => [
     asCsvValue(sale.id),
     asCsvValue(sale.sold_at),
     asCsvValue(sale.payment_method),

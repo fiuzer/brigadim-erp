@@ -1,17 +1,12 @@
-"use client";
+﻿"use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, UserCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_LABELS, type UserRole } from "@/lib/constants/roles";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
@@ -32,17 +27,28 @@ const initialsFromName = (name: string | null, email: string | null) => {
 
 export function UserMenu({ name, email, role }: UserMenuProps) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+
+      setOpen(false);
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível sair da conta.");
+    }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
         id="app-user-menu-trigger"
         render={
           <Button
@@ -61,22 +67,31 @@ export function UserMenu({ name, email, role }: UserMenuProps) {
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="space-y-1">
+
+      <PopoverContent align="end" className="w-64 gap-0 rounded-xl p-2">
+        <div className="space-y-1 px-2 py-1.5">
           <p className="text-sm font-medium leading-none">{name ?? "Usuário"}</p>
           <p className="text-xs font-normal text-[#907761]">{email ?? "Sem e-mail"}</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2">
+        </div>
+
+        <div className="my-1 h-px bg-border" />
+
+        <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground">
           <UserCircle2 className="h-4 w-4" />
           Perfil de acesso: {ROLE_LABELS[role]}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="gap-2 text-red-600 focus:text-red-700">
+        </div>
+
+        <div className="my-1 h-px bg-border" />
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+        >
           <LogOut className="h-4 w-4" />
           Sair
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }
