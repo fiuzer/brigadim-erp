@@ -27,7 +27,7 @@ export async function createProductAction(input: ProductFormValues) {
   });
 
   if (error) {
-    throw new Error(`Não foi possível criar o produto: ${error.message}`);
+    throw new Error(`Nao foi possivel criar o produto: ${error.message}`);
   }
 
   revalidatePath("/produtos");
@@ -37,7 +37,7 @@ export async function createProductAction(input: ProductFormValues) {
 
 export async function updateProductAction(input: ProductFormValues) {
   if (!input.id) {
-    throw new Error("ID do produto é obrigatório.");
+    throw new Error("ID do produto e obrigatorio.");
   }
 
   const { supabase } = await requirePermission("products:write");
@@ -48,7 +48,7 @@ export async function updateProductAction(input: ProductFormValues) {
     .eq("id", input.id);
 
   if (error) {
-    throw new Error(`Não foi possível atualizar o produto: ${error.message}`);
+    throw new Error(`Nao foi possivel atualizar o produto: ${error.message}`);
   }
 
   revalidatePath("/produtos");
@@ -59,13 +59,77 @@ export async function updateProductAction(input: ProductFormValues) {
 export async function deleteProductAction(productId: string) {
   const { supabase } = await requirePermission("products:write");
 
+  const [movementCountResult, saleItemCountResult] = await Promise.all([
+    supabase
+      .from("inventory_movements")
+      .select("id", { head: true, count: "exact" })
+      .eq("product_id", productId),
+    supabase
+      .from("sale_items")
+      .select("id", { head: true, count: "exact" })
+      .eq("product_id", productId),
+  ]);
+
+  if (movementCountResult.error) {
+    throw new Error(
+      `Nao foi possivel validar historico de estoque: ${movementCountResult.error.message}`,
+    );
+  }
+
+  if (saleItemCountResult.error) {
+    throw new Error(
+      `Nao foi possivel validar historico de vendas: ${saleItemCountResult.error.message}`,
+    );
+  }
+
+  const hasHistory =
+    (movementCountResult.count ?? 0) > 0 || (saleItemCountResult.count ?? 0) > 0;
+
+  if (hasHistory) {
+    const { error: updateError } = await supabase
+      .from("products")
+      .update({ is_active: false })
+      .eq("id", productId);
+
+    if (updateError) {
+      throw new Error(`Nao foi possivel desativar o produto: ${updateError.message}`);
+    }
+
+    revalidatePath("/produtos");
+    revalidatePath("/dashboard");
+    revalidatePath("/estoque");
+    return { mode: "deactivated" as const };
+  }
+
   const { error } = await supabase.from("products").delete().eq("id", productId);
 
   if (error) {
-    throw new Error(`Não foi possível excluir o produto: ${error.message}`);
+    const message = error.message.toLowerCase();
+    const isForeignKeyError = message.includes("foreign key") || message.includes("violates");
+
+    if (isForeignKeyError) {
+      const { error: updateError } = await supabase
+        .from("products")
+        .update({ is_active: false })
+        .eq("id", productId);
+
+      if (updateError) {
+        throw new Error(`Nao foi possivel desativar o produto: ${updateError.message}`);
+      }
+
+      revalidatePath("/produtos");
+      revalidatePath("/dashboard");
+      revalidatePath("/estoque");
+      return { mode: "deactivated" as const };
+    }
+
+    throw new Error(`Nao foi possivel excluir o produto: ${error.message}`);
   }
 
   revalidatePath("/produtos");
+  revalidatePath("/dashboard");
+  revalidatePath("/estoque");
+  return { mode: "deleted" as const };
 }
 
 export async function toggleProductStatusAction(productId: string, isActive: boolean) {
@@ -79,7 +143,7 @@ export async function toggleProductStatusAction(productId: string, isActive: boo
     .eq("id", productId);
 
   if (error) {
-    throw new Error(`Não foi possível alterar o status do produto: ${error.message}`);
+    throw new Error(`Nao foi possivel alterar o status do produto: ${error.message}`);
   }
 
   revalidatePath("/produtos");

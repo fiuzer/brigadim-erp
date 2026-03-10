@@ -63,8 +63,12 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
   const handleDelete = (id: string) => {
     startTransition(async () => {
       try {
-        await deleteProductAction(id);
-        toast.success("Produto excluído.");
+        const result = await deleteProductAction(id);
+        if (result.mode === "deactivated") {
+          toast.success("Produto com historico foi desativado para preservar os registros.");
+          return;
+        }
+        toast.success("Produto excluido.");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Erro ao excluir produto.");
       }
@@ -98,7 +102,7 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
       cell: ({ row }) => (
         <div>
           <p className="font-medium text-slate-900">{row.original.name}</p>
-          <p className="text-xs text-slate-500">{row.original.sku || "Sem código"}</p>
+          <p className="text-xs text-slate-500">{row.original.sku || "Sem codigo"}</p>
         </div>
       ),
     },
@@ -109,7 +113,7 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
     },
     {
       accessorKey: "sale_price",
-      header: "Preço de venda",
+      header: "Preco de venda",
       cell: ({ row }) => formatCurrencyBRL(row.original.sale_price),
     },
     {
@@ -165,7 +169,7 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
     },
     {
       id: "actions",
-      header: "Ações",
+      header: "Acoes",
       cell: ({ row }) =>
         canWrite ? (
           <DropdownMenu>
@@ -214,7 +218,7 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
         ) : (
           <Button variant="ghost" size="sm" className="gap-2" disabled>
             <Pencil className="h-4 w-4" />
-            Sem permissão
+            Sem permissao
           </Button>
         ),
     },
@@ -261,7 +265,7 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
             <p className="text-sm font-semibold text-slate-900">{row.name}</p>
             <p className="text-xs text-slate-500">{row.category?.name ?? "Sem categoria"}</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <p className="text-slate-600">Preço: {formatCurrencyBRL(row.sale_price)}</p>
+              <p className="text-slate-600">Preco: {formatCurrencyBRL(row.sale_price)}</p>
               <p className="text-slate-600">Custo: {formatCurrencyBRL(row.production_cost)}</p>
               <p className="text-slate-600">Margem: {formatCurrencyBRL(margin)}</p>
               <p className="text-slate-600">Estoque: {row.stock_quantity} un.</p>
@@ -272,3 +276,4 @@ export function ProductsTable({ products, categories, canWrite }: ProductsTableP
     />
   );
 }
+
