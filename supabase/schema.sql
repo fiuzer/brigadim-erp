@@ -193,6 +193,8 @@ create or replace function public.current_user_role()
 returns user_role
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select role from public.profiles where id = auth.uid();
 $$;
@@ -201,9 +203,16 @@ create or replace function public.has_any_role(required_roles user_role[])
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select coalesce(public.current_user_role() = any(required_roles), false);
 $$;
+
+revoke all on function public.current_user_role() from public;
+grant execute on function public.current_user_role() to authenticated, service_role;
+revoke all on function public.has_any_role(user_role[]) from public;
+grant execute on function public.has_any_role(user_role[]) to authenticated, service_role;
 
 create or replace function public.cancel_sale(sale_id_param uuid)
 returns boolean
@@ -494,11 +503,38 @@ create policy "audit_logs_read" on public.audit_logs
 for select to authenticated
 using (public.has_any_role(array['administrador']::user_role[]));
 
+-- Grants de objetos (necessarios apos reset do schema)
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to postgres, service_role;
+grant all on all sequences in schema public to postgres, service_role;
+grant all on all routines in schema public to postgres, service_role;
+
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant usage, select, update on all sequences in schema public to authenticated;
+grant execute on all routines in schema public to authenticated;
+
+alter default privileges for role postgres in schema public
+grant select, insert, update, delete on tables to authenticated;
+alter default privileges for role postgres in schema public
+grant usage, select, update on sequences to authenticated;
+alter default privileges for role postgres in schema public
+grant execute on routines to authenticated;
+
+-- Backfill de perfis para usuarios que ja existiam no auth.users
+insert into public.profiles (id, full_name, role, is_active)
+select
+  u.id,
+  coalesce(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)),
+  'visualizador'::user_role,
+  true
+from auth.users u
+on conflict (id) do nothing;
+
 insert into public.product_categories (name) values
   ('Brigadeiros'),
   ('Trufas'),
   ('Pudins'),
-  ('Ovos de Páscoa'),
+  ('Ovos de Pascoa'),
   ('Sazonais'),
   ('Pedidos Personalizados')
 on conflict (name) do nothing;
@@ -506,7 +542,7 @@ on conflict (name) do nothing;
 insert into public.expense_categories (name) values
   ('Ingredientes'),
   ('Embalagens'),
-  ('Gás'),
+  ('Gas'),
   ('Energia'),
   ('Transporte'),
   ('Marketing'),
